@@ -1,0 +1,1265 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetSecure | Security Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg: #0b1120;
+            --panel: #111b2e;
+            --panel-light: #17243a;
+            --border: #27364d;
+            --text: #edf4ff;
+            --muted: #9aabc2;
+            --accent: #39d5c5;
+            --blue: #69a9ff;
+            --red: #ff687d;
+            --yellow: #ffca69;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+
+        button { font: inherit; cursor: pointer; }
+
+        .layout { display: flex; min-height: 100vh; }
+
+        aside {
+            width: 235px;
+            padding: 28px 18px;
+            background: #0e1728;
+            border-right: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .brand {
+            font-size: 25px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .brand span { color: var(--accent); }
+
+        .subtitle {
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 38px;
+        }
+
+        .nav-label {
+            color: #71839d;
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            margin: 24px 10px 12px;
+        }
+
+        .nav-item {
+            display: block;
+            padding: 12px;
+            border-radius: 9px;
+            color: var(--muted);
+            margin: 6px 0;
+            font-size: 14px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: #17343e;
+            color: var(--accent);
+        }
+
+        .sidebar-note {
+            margin-top: 42px;
+            border: 1px solid var(--border);
+            padding: 13px;
+            border-radius: 10px;
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        main {
+            flex: 1;
+            min-width: 0;
+            padding: 28px;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        h1 { font-size: 27px; margin: 0 0 8px; }
+        h2 { font-size: 17px; margin: 0; }
+
+        .muted { color: var(--muted); font-size: 13px; }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            border: 1px solid var(--border);
+            padding: 9px 12px;
+            border-radius: 9px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 9px;
+            padding: 11px 16px;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .btn-primary { background: var(--accent); color: #06231f; }
+
+        .btn-secondary {
+            background: var(--panel-light);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-download {
+            background: #203b67;
+            color: #ffffff;
+            border: 1px solid #345b92;
+        }
+
+        .btn:disabled { opacity: 0.55; cursor: wait; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            min-width: 0;
+        }
+
+        .card-label { color: var(--muted); font-size: 13px; }
+
+        .metric {
+            font-size: 31px;
+            font-weight: 750;
+            margin: 16px 0 7px;
+        }
+
+        .metric-note { color: var(--muted); font-size: 12px; }
+        .metric-accent { color: var(--accent); }
+        .metric-blue { color: var(--blue); }
+        .metric-yellow { color: var(--yellow); }
+
+        .section { margin-bottom: 22px; }
+
+        .section-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .risk-layout, .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .risk-score {
+            font-size: 40px;
+            font-weight: 800;
+            margin: 18px 0 5px;
+        }
+
+        .progress {
+            height: 9px;
+            background: #25344a;
+            border-radius: 20px;
+            overflow: hidden;
+            margin: 17px 0 12px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0;
+            background: var(--accent);
+            border-radius: 20px;
+            transition: width 0.3s;
+        }
+
+        .risk-level {
+            display: inline-block;
+            border-radius: 7px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 700;
+            background: #17343e;
+            color: var(--accent);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 13px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+
+        .info-row:last-child { border-bottom: 0; }
+        .info-row span:first-child { color: var(--muted); }
+
+        .chart-container {
+            position: relative;
+            height: 280px;
+            width: 100%;
+        }
+
+        .chart-note {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.6;
+            margin-top: 12px;
+        }
+
+        .table-wrap { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 560px;
+        }
+
+        th, td {
+            padding: 14px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            vertical-align: top;
+        }
+
+        th {
+            color: var(--muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        tr:last-child td { border-bottom: 0; }
+
+        .status {
+            display: inline-block;
+            padding: 5px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .status-completed { color: var(--accent); background: #17343e; }
+        .status-pending, .status-running { color: var(--yellow); background: #40351f; }
+        .status-failed { color: var(--red); background: #43232d; }
+
+        .link-btn {
+            background: transparent;
+            border: 0;
+            color: var(--blue);
+            padding: 5px;
+        }
+
+        .message {
+            margin: 12px 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .message.error { color: var(--red); }
+
+        /* Vulnerability Management */
+        .vuln-summary {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .vuln-count {
+            font-size: 27px;
+            font-weight: 800;
+            margin-top: 12px;
+        }
+
+        .vuln-critical { color: #ff687d; }
+        .vuln-high { color: #ff914d; }
+        .vuln-medium { color: #ffca69; }
+        .vuln-low { color: #39d5c5; }
+
+        .vuln-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .vuln-controls input,
+        .vuln-controls select {
+            flex: 1;
+            min-width: 160px;
+            padding: 11px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font: inherit;
+            font-size: 13px;
+        }
+
+        .vuln-controls option {
+            background: var(--panel);
+            color: var(--text);
+        }
+
+        .severity-badge {
+            display: inline-block;
+            padding: 5px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .severity-critical { color: #ff687d; background: #43232d; }
+        .severity-high { color: #ff914d; background: #422c22; }
+        .severity-medium { color: #ffca69; background: #40351f; }
+        .severity-low { color: #39d5c5; background: #17343e; }
+        .severity-unknown { color: var(--muted); background: var(--panel-light); }
+
+        .vuln-details {
+            max-width: 380px;
+            min-width: 220px;
+            white-space: normal;
+            line-height: 1.6;
+        }
+
+        .vuln-details summary {
+            color: var(--blue);
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .vuln-details p {
+            color: var(--muted);
+            margin: 9px 0;
+        }
+
+        .vuln-table { min-width: 950px; }
+
+        footer {
+            padding: 15px 0;
+            color: #71839d;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        @media (max-width: 1050px) {
+            .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            aside { width: 190px; }
+        }
+
+        @media (max-width: 700px) {
+            .layout { display: block; }
+
+            aside {
+                width: 100%;
+                padding: 18px;
+                border-right: 0;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .subtitle { margin-bottom: 15px; }
+            .nav-label, .sidebar-note { display: none; }
+            .nav-item { display: inline-block; margin: 5px 3px 0 0; }
+            main { padding: 18px; }
+            .risk-layout, .charts-grid { grid-template-columns: 1fr; }
+            .vuln-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            h1 { font-size: 23px; }
+        }
+
+        @media (max-width: 420px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+        
+html {
+    scroll-behavior: smooth;
+}
+
+section, header {
+    scroll-margin-top: 20px;
+}
+
+.nav-item:focus-visible,
+.btn:focus-visible,
+.link-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+}
+
+.vuln-controls input:focus,
+.vuln-controls select:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+    </style>
+</head>
+
+<body>
+<div class="layout">
+    <aside>
+        <div class="brand">Net<span>Secure</span></div>
+        <div class="subtitle">NETWORK SECURITY PLATFORM</div>
+
+        <div class="nav-label">WORKSPACE</div>
+        <a href="#dashboardSection" class="nav-item active" onclick="return goToSection('dashboardSection', this)">▦ &nbsp; Dashboard</a>
+        <a href="#scanHistorySection" class="nav-item" onclick="return goToSection('scanHistorySection', this)">⌕ &nbsp; Scan History</a>
+        <a href="#riskAssessmentSection" class="nav-item" onclick="return goToSection('riskAssessmentSection', this)">⚠ &nbsp; Risk Assessment</a>
+        <a href="#vulnerabilitySection" class="nav-item" onclick="return goToSection('vulnerabilitySection', this)">◈ &nbsp; Vulnerabilities</a>
+
+
+        <div class="sidebar-note">
+            <strong>Development Mode</strong><br>
+            Scanning is restricted to localhost (127.0.0.1).
+            Findings require manual verification.
+        </div>
+    </aside>
+
+    <main>
+        <header id="dashboardSection">
+            <div>
+                <h1>Security Dashboard</h1>
+                <div class="muted">
+                    Monitor scans, open ports and preliminary security findings.
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <span class="badge" id="connection">Checking API...</span>
+                <button class="btn btn-secondary" id="refreshBtn" onclick="loadDashboard()">↻ Refresh</button>
+                <button class="btn btn-download" id="downloadPdfBtn" onclick="downloadPdfReport()">↓ Download PDF</button>
+                <button class="btn btn-primary" id="scanBtn" onclick="startScan()">+ Scan Localhost</button>
+            </div>
+        </header>
+
+        <div id="message" class="message" role="status"></div>
+
+        <section class="grid">
+            <div class="card">
+                <div class="card-label">Total Scans</div>
+                <div class="metric" id="totalScans">—</div>
+                <div class="metric-note">All recorded scans</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Completed Scans</div>
+                <div class="metric metric-accent" id="completedScans">—</div>
+                <div class="metric-note">Successfully finished</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Pending Scans</div>
+                <div class="metric metric-yellow" id="pendingScans">—</div>
+                <div class="metric-note">Waiting to complete</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Latest Risk Score</div>
+                <div class="metric metric-blue" id="latestRisk">—</div>
+                <div class="metric-note" id="latestRiskNote">No scan selected</div>
+            </div>
+        </section>
+
+        <section class="section risk-layout" id="riskAssessmentSection">
+            <div class="card">
+                <div class="section-heading">
+                    <h2>Latest Risk Assessment</h2>
+                    <span class="risk-level" id="riskLevel">No data</span>
+                </div>
+                <div class="risk-score">
+                    <span id="riskValue">—</span>
+                    <span style="font-size:15px;color:var(--muted)">/ 10</span>
+                </div>
+                <div class="progress">
+                    <div class="progress-fill" id="riskBar"></div>
+                </div>
+                <div class="muted" id="riskDescription">
+                    Run or select a scan to view its preliminary risk score.
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-heading"><h2>Latest Scan Details</h2></div>
+                <div class="info-row"><span>Scan ID</span><strong id="latestScanId">—</strong></div>
+                <div class="info-row"><span>Target</span><strong id="latestTarget">—</strong></div>
+                <div class="info-row"><span>Status</span><strong id="latestStatus">—</strong></div>
+                <div class="info-row"><span>Open ports saved</span><strong id="latestPorts">—</strong></div>
+            </div>
+        </section>
+
+        <section class="section charts-grid">
+            <div class="card">
+                <div class="section-heading">
+                    <h2>Finding Severity Distribution</h2>
+                    <span class="muted" id="severityScanLabel">Selected scan</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="severityChart"></canvas>
+                </div>
+                <div class="chart-note">
+                    Counts preliminary findings attached to ports in the selected scan.
+                    A port may have more than one finding.
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-heading">
+                    <h2>Recent Scan Risk Scores</h2>
+                    <span class="muted">Latest 10 scans</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="historyChart"></canvas>
+                </div>
+                <div class="chart-note">
+                    Shows stored project risk scores from recent scans.
+                    These scores are preliminary, rule-based assessments.
+                </div>
+            </div>
+        </section>
+
+        <section class="section card" id="scanHistorySection">
+            <div class="section-heading">
+                <h2>Recent Scan History</h2>
+                <span class="muted">Select Details to inspect a scan</span>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Scan ID</th><th>Target</th><th>Status</th>
+                        <th>Risk Score</th><th>Action</th>
+                    </tr>
+                    </thead>
+                    <tbody id="scanTable">
+                    <tr><td colspan="5">Loading scan history...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="section card">
+            <div class="section-heading">
+                <h2>Selected Scan Results</h2>
+                <span class="muted" id="selectedScanLabel">No scan selected</span>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Host</th><th>Port</th><th>Service</th>
+                        <th>State</th><th>Findings</th>
+                    </tr>
+                    </thead>
+                    <tbody id="resultsTable">
+                    <tr><td colspan="5">Select a scan to view its results.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Vulnerability Management -->
+        <section class="section" id="vulnerabilitySection">
+            <div class="section-heading">
+                <div>
+                    <h2>Vulnerability Management</h2>
+                    <div class="muted">
+                        Preliminary findings, affected services, and remediation guidance.
+                    </div>
+                </div>
+                <button class="btn btn-secondary" id="refreshVulnBtn" onclick="loadVulnerabilities()">
+                    ↻ Refresh Findings
+                </button>
+            </div>
+
+            <div class="vuln-summary">
+                <div class="card">
+                    <div class="card-label">Critical</div>
+                    <div class="vuln-count vuln-critical" id="countCritical">0</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">High</div>
+                    <div class="vuln-count vuln-high" id="countHigh">0</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Medium</div>
+                    <div class="vuln-count vuln-medium" id="countMedium">0</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Low</div>
+                    <div class="vuln-count vuln-low" id="countLow">0</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="vuln-controls">
+                    <input type="search" id="vulnSearch"
+                           placeholder="Search findings, services, ports..."
+                           oninput="renderVulnerabilities()"
+                           aria-label="Search vulnerabilities">
+
+                    <select id="vulnSeverityFilter" onchange="renderVulnerabilities()" aria-label="Filter by severity">
+                        <option value="all">All severities</option>
+                        <option value="Critical">Critical</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                        <option value="Unrated">Unrated</option>
+                    </select>
+
+                    <select id="vulnScanFilter" onchange="renderVulnerabilities()" aria-label="Filter by scan">
+                        <option value="all">All scans</option>
+                    </select>
+                </div>
+
+                <div class="muted" id="vulnResultCount" aria-live="polite">Loading findings...</div>
+
+                <div class="table-wrap">
+                    <table class="vuln-table">
+                        <thead>
+                        <tr>
+                            <th>Finding</th>
+                            <th>Severity</th>
+                            <th>Score</th>
+                            <th>Host</th>
+                            <th>Port / Service</th>
+                            <th>Scan</th>
+                            <th>Description &amp; Fix</th>
+                        </tr>
+                        </thead>
+                        <tbody id="vulnerabilityTable">
+                        <tr><td colspan="7">Loading vulnerability findings...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            NetSecure · Automated Network Vulnerability Scanner &amp; Risk Assessment Dashboard
+        </footer>
+    </main>
+</div>
+
+<script>
+    const API = "";
+    let severityChart = null;
+    let historyChart = null;
+    let latestScans = [];
+    let selectedScanId = null;
+    let allVulnerabilities = [];
+
+    function showMessage(text, isError = false) {
+        const element = document.getElementById("message");
+        element.textContent = text;
+        element.className = isError ? "message error" : "message";
+    }
+
+    async function apiGet(path) {
+        const response = await fetch(API + path);
+        if (!response.ok) {
+            throw new Error("API returned HTTP " + response.status);
+        }
+        return response.json();
+    }
+
+    function escapeHTML(value) {
+        return String(value ?? "").replace(/[&<>"']/g, char => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        })[char]);
+    }
+
+    function statusBadge(status) {
+        const safeStatus = String(status || "Unknown");
+        const className = safeStatus.toLowerCase();
+        return `<span class="status status-${escapeHTML(className)}">${escapeHTML(safeStatus)}</span>`;
+    }
+
+    function getRiskLevel(score) {
+        const value = Number(score);
+        if (value < 3) return "Low";
+        if (value < 6) return "Medium";
+        if (value < 8) return "High";
+        return "Critical";
+    }
+
+    
+function setActiveNav(element) {
+    document.querySelectorAll(".nav-item").forEach(item => {
+        item.classList.remove("active");
+    });
+    if (element) element.classList.add("active");
+}
+
+function goToSection(sectionId, element) {
+    const target = document.getElementById(sectionId);
+
+    if (!target) {
+        showMessage("Section not found: " + sectionId, true);
+        return false;
+    }
+
+    setActiveNav(element);
+    target.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
+
+    return false;
+}
+
+    function initializeCharts() {
+        if (typeof Chart === "undefined") {
+            showMessage("Chart.js could not load. Check your internet connection or CDN access.", true);
+            return;
+        }
+
+        severityChart = new Chart(document.getElementById("severityChart").getContext("2d"), {
+            type: "doughnut",
+            data: {
+                labels: ["Low", "Medium", "High", "Critical"],
+                datasets: [{
+                    data: [0, 0, 0, 0],
+                    backgroundColor: ["#39d5c5", "#ffca69", "#ff914d", "#ff687d"],
+                    borderColor: "#111b2e",
+                    borderWidth: 3,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: { color: "#edf4ff", padding: 18 }
+                    }
+                }
+            }
+        });
+
+        historyChart = new Chart(document.getElementById("historyChart").getContext("2d"), {
+            type: "bar",
+            data: {
+                labels: [],
+                datasets: [{
+                    label: "Risk score",
+                    data: [],
+                    backgroundColor: "#39d5c5",
+                    borderColor: "#39d5c5",
+                    borderRadius: 6,
+                    maxBarThickness: 42
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        ticks: { color: "#9aabc2" },
+                        grid: { display: false }
+                    },
+                    y: {
+                        min: 0,
+                        max: 10,
+                        ticks: { color: "#9aabc2", stepSize: 2 },
+                        grid: { color: "#27364d" }
+                    }
+                },
+                plugins: {
+                    legend: { labels: { color: "#edf4ff" } }
+                }
+            }
+        });
+    }
+
+    function updateHistoryChart(scans) {
+        if (!historyChart) return;
+
+        const recent = [...scans]
+            .sort((a, b) => Number(a.id) - Number(b.id))
+            .slice(-10);
+
+        historyChart.data.labels = recent.map(scan => "#" + scan.id);
+        historyChart.data.datasets[0].data = recent.map(scan =>
+            Math.max(0, Math.min(10, Number(scan.risk_score ?? 0)))
+        );
+        historyChart.update();
+    }
+
+    function updateSeverityChart(results, scanId) {
+        if (!severityChart) return;
+
+        const counts = { Low: 0, Medium: 0, High: 0, Critical: 0 };
+
+        for (const item of results || []) {
+            for (const finding of item.vulnerabilities || []) {
+                const severity = String(finding.severity || "").toLowerCase();
+                if (severity === "low") counts.Low++;
+                else if (severity === "medium") counts.Medium++;
+                else if (severity === "high") counts.High++;
+                else if (severity === "critical") counts.Critical++;
+            }
+        }
+
+        severityChart.data.datasets[0].data = [
+            counts.Low, counts.Medium, counts.High, counts.Critical
+        ];
+        severityChart.update();
+        document.getElementById("severityScanLabel").textContent = "Scan #" + scanId;
+    }
+
+    async function loadDashboard() {
+        const refreshButton = document.getElementById("refreshBtn");
+        refreshButton.disabled = true;
+        document.getElementById("connection").textContent = "Connecting...";
+
+        try {
+            const [dashboard, scans] = await Promise.all([
+                apiGet("/api/dashboard"),
+                apiGet("/api/scans")
+            ]);
+
+            if (!Array.isArray(scans)) {
+                throw new Error("The /api/scans endpoint did not return a list.");
+            }
+
+            document.getElementById("connection").textContent = "API Connected";
+            document.getElementById("totalScans").textContent = dashboard.total_scans;
+            document.getElementById("completedScans").textContent = dashboard.completed_scans;
+            document.getElementById("pendingScans").textContent = dashboard.pending_scans;
+
+            latestScans = [...scans].sort((a, b) => Number(b.id) - Number(a.id));
+            const table = document.getElementById("scanTable");
+
+            if (!latestScans.length) {
+                table.innerHTML = '<tr><td colspan="5">No scans recorded yet.</td></tr>';
+                clearLatestScan();
+                updateHistoryChart([]);
+                updateSeverityChart([], "—");
+                showMessage("API connected. Run your first localhost scan.");
+                return;
+            }
+
+            table.innerHTML = latestScans.map(scan => `
+                <tr>
+                    <td>#${escapeHTML(scan.id)}</td>
+                    <td>${escapeHTML(scan.target)}</td>
+                    <td>${statusBadge(scan.status)}</td>
+                    <td>${Number(scan.risk_score ?? 0).toFixed(1)} / 10</td>
+                    <td><button class="link-btn" onclick="viewScan(${Number(scan.id)})">Details →</button></td>
+                </tr>
+            `).join("");
+
+            updateHistoryChart(latestScans);
+
+            const scanToSelect = latestScans.find(
+                scan => Number(scan.id) === Number(selectedScanId)
+            ) || latestScans[0];
+
+            await viewScan(scanToSelect.id);
+            showMessage("Dashboard and charts refreshed successfully.");
+        } catch (error) {
+            document.getElementById("connection").textContent = "API Error";
+            showMessage("Could not load dashboard data. Check Flask and your connection. " + error.message, true);
+        } finally {
+            refreshButton.disabled = false;
+        }
+    }
+
+    function clearLatestScan() {
+        selectedScanId = null;
+        document.getElementById("latestRisk").textContent = "—";
+        document.getElementById("latestRiskNote").textContent = "No scan selected";
+        document.getElementById("riskValue").textContent = "—";
+        document.getElementById("riskLevel").textContent = "No data";
+        document.getElementById("riskBar").style.width = "0%";
+        document.getElementById("riskDescription").textContent = "Run or select a scan to view its preliminary risk score.";
+        document.getElementById("latestScanId").textContent = "—";
+        document.getElementById("latestTarget").textContent = "—";
+        document.getElementById("latestStatus").textContent = "—";
+        document.getElementById("latestPorts").textContent = "—";
+        document.getElementById("selectedScanLabel").textContent = "No scan selected";
+        document.getElementById("resultsTable").innerHTML = '<tr><td colspan="5">No scan results available.</td></tr>';
+    }
+
+    async function viewScan(scanId) {
+        try {
+            const data = await apiGet("/api/results/" + encodeURIComponent(scanId));
+            const score = Number(data.risk_score ?? 0);
+            const level = data.risk_level || getRiskLevel(score);
+
+            selectedScanId = Number(data.scan_id);
+
+            document.getElementById("selectedScanLabel").textContent = "Scan #" + data.scan_id;
+            document.getElementById("latestScanId").textContent = "#" + data.scan_id;
+            document.getElementById("latestTarget").textContent = data.target || "—";
+            document.getElementById("latestStatus").innerHTML = statusBadge(data.status);
+            document.getElementById("latestRisk").textContent = score.toFixed(1) + "/10";
+            document.getElementById("latestRiskNote").textContent = level + " risk";
+            document.getElementById("riskValue").textContent = score.toFixed(1);
+            document.getElementById("riskLevel").textContent = level;
+            document.getElementById("riskBar").style.width = Math.max(0, Math.min(100, score * 10)) + "%";
+            document.getElementById("riskDescription").textContent =
+                "Project-defined " + level.toLowerCase() + " category based on preliminary rule-based findings.";
+
+            const results = data.results || [];
+            document.getElementById("latestPorts").textContent = results.length;
+            updateSeverityChart(results, data.scan_id);
+
+            const resultsTable = document.getElementById("resultsTable");
+
+            if (!results.length) {
+                resultsTable.innerHTML = '<tr><td colspan="5">No saved port results for this scan.</td></tr>';
+            } else {
+                resultsTable.innerHTML = results.map(item => {
+                    const findings = item.vulnerabilities || [];
+                    const findingText = findings.length
+                        ? findings.map(f => escapeHTML(f.name) + " (" + escapeHTML(f.severity || "Unrated") + ")").join("<br>")
+                        : "No findings recorded";
+
+                    return `
+                        <tr>
+                            <td>${escapeHTML(item.host)}</td>
+                            <td>${escapeHTML(item.port)}/${escapeHTML(item.protocol)}</td>
+                            <td>${escapeHTML(item.service)}</td>
+                            <td>${escapeHTML(item.state)}</td>
+                            <td>${findingText}</td>
+                        </tr>
+                    `;
+                }).join("");
+            }
+        } catch (error) {
+            showMessage("Could not load scan details: " + error.message, true);
+        }
+    }
+
+    /* Vulnerability Management */
+    async function loadVulnerabilities() {
+        const button = document.getElementById("refreshVulnBtn");
+        button.disabled = true;
+        button.textContent = "Loading...";
+
+        try {
+            const data = await apiGet("/api/vulnerabilities");
+
+            if (!Array.isArray(data)) {
+                throw new Error("The vulnerability API did not return a list.");
+            }
+
+            allVulnerabilities = data;
+
+            const scanFilter = document.getElementById("vulnScanFilter");
+            const previousValue = scanFilter.value;
+
+            const scanIds = [...new Set(
+                allVulnerabilities
+                    .map(item => Number(item.scan_id))
+                    .filter(id => Number.isFinite(id) && id > 0)
+            )].sort((a, b) => b - a);
+
+            scanFilter.innerHTML = '<option value="all">All scans</option>' +
+                scanIds.map(id => `<option value="${id}">Scan #${id}</option>`).join("");
+
+            scanFilter.value =
+                previousValue === "all" || scanIds.includes(Number(previousValue))
+                    ? previousValue
+                    : "all";
+
+            renderVulnerabilities();
+        } catch (error) {
+            document.getElementById("vulnerabilityTable").innerHTML =
+                `<tr><td colspan="7">Could not load findings: ${escapeHTML(error.message)}</td></tr>`;
+            document.getElementById("vulnResultCount").textContent =
+                "Unable to load vulnerability data.";
+        } finally {
+            button.disabled = false;
+            button.textContent = "↻ Refresh Findings";
+        }
+    }
+
+    
+function renderVulnerabilities() {
+    const search = document.getElementById("vulnSearch").value.trim().toLowerCase();
+    const severityFilter = document.getElementById("vulnSeverityFilter").value;
+    const scanFilter = document.getElementById("vulnScanFilter").value;
+
+    // Count all historical findings, independent of active filters.
+    const counts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
+
+    allVulnerabilities.forEach(item => {
+        const severity = String(item.severity || "").toLowerCase();
+
+        if (severity === "critical") counts.Critical++;
+        else if (severity === "high") counts.High++;
+        else if (severity === "medium") counts.Medium++;
+        else if (severity === "low") counts.Low++;
+    });
+
+    document.getElementById("countCritical").textContent = counts.Critical;
+    document.getElementById("countHigh").textContent = counts.High;
+    document.getElementById("countMedium").textContent = counts.Medium;
+    document.getElementById("countLow").textContent = counts.Low;
+
+    // Apply filters only to the table.
+    const visible = allVulnerabilities.filter(item => {
+        const severity = String(item.severity || "Unrated");
+
+        const matchesSeverity = severityFilter === "all" ||
+            severity.toLowerCase() === severityFilter.toLowerCase();
+
+        const matchesScan = scanFilter === "all" ||
+            Number(item.scan_id) === Number(scanFilter);
+
+        const searchable = [
+            item.name,
+            item.severity,
+            item.description,
+            item.recommendation,
+            item.service,
+            item.host_ip,
+            item.port_number,
+            item.protocol,
+            item.scan_id
+        ].join(" ").toLowerCase();
+
+        return matchesSeverity && matchesScan && searchable.includes(search);
+    });
+
+    document.getElementById("vulnResultCount").textContent =
+        `Showing ${visible.length} of ${allVulnerabilities.length} historical findings`;
+
+    const table = document.getElementById("vulnerabilityTable");
+
+    if (!visible.length) {
+        table.innerHTML =
+            '<tr><td colspan="7">No findings match these filters.</td></tr>';
+        return;
+    }
+
+    table.innerHTML = visible.map(item => {
+        const severity = String(item.severity || "Unrated");
+
+        const severityClass = {
+            critical: "severity-critical",
+            high: "severity-high",
+            medium: "severity-medium",
+            low: "severity-low"
+        }[severity.toLowerCase()] || "severity-unknown";
+
+        const score = Number(item.score);
+        const scoreText = Number.isFinite(score)
+            ? score.toFixed(1) + " / 10"
+            : "N/A";
+
+        const scanId = Number(item.scan_id);
+        const validScanId = Number.isInteger(scanId) && scanId > 0;
+
+        return `
+            <tr>
+                <td>${escapeHTML(item.name || "Unnamed finding")}</td>
+                <td>
+                    <span class="severity-badge ${severityClass}">
+                        ${escapeHTML(severity)}
+                    </span>
+                </td>
+                <td>${scoreText}</td>
+                <td>${escapeHTML(item.host_ip || "—")}</td>
+                <td>
+                    ${escapeHTML(item.port_number ?? "—")}/${escapeHTML(item.protocol || "TCP")}
+                    <br>
+                    <span class="muted">
+                        ${escapeHTML(item.service || "Unknown service")}
+                    </span>
+                </td>
+                <td>
+                    ${validScanId
+                        ? `<button class="link-btn" onclick="selectVulnerabilityScan(${scanId})">#${scanId}</button>`
+                        : "—"}
+                </td>
+                <td>
+                    <details class="vuln-details">
+                        <summary>View details &amp; fix</summary>
+                        <p>
+                            <strong>Description</strong><br>
+                            ${escapeHTML(item.description || "No description provided.")}
+                        </p>
+                        <p>
+                            <strong>Recommended action</strong><br>
+                            ${escapeHTML(item.recommendation || "Review this service manually.")}
+                        </p>
+                        <p>
+                            <strong>Verification</strong><br>
+                            This is a preliminary service-based finding. Verify the actual
+                            configuration before treating it as a confirmed vulnerability.
+                        </p>
+                    </details>
+                </td>
+            </tr>
+        `;
+    }).join("");
+}
+
+
+    
+async function selectVulnerabilityScan(scanId) {
+    try {
+        const scan = latestScans.find(
+            item => Number(item.id) === Number(scanId)
+        );
+
+        if (!scan) {
+            showMessage(
+                "This finding references Scan #" + scanId +
+                ", but that scan was not found in scan history.",
+                true
+            );
+            return;
+        }
+
+        const scanHistoryLink = document.querySelector(
+            '.nav-item[href="#scanHistorySection"]'
+        );
+
+        if (scanHistoryLink) setActiveNav(scanHistoryLink);
+
+        await viewScan(scanId);
+
+        document.getElementById("scanHistorySection").scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    } catch (error) {
+        showMessage("Could not open scan: " + error.message, true);
+    }
+}
+
+
+    async function downloadPdfReport() {
+        if (!selectedScanId) {
+            showMessage("Select a scan from Recent Scan History first.", true);
+            return;
+        }
+
+        const button = document.getElementById("downloadPdfBtn");
+        button.disabled = true;
+        button.textContent = "Preparing PDF...";
+
+        try {
+            const response = await fetch(
+                API + "/api/reports/" + encodeURIComponent(selectedScanId) + "/pdf"
+            );
+
+            if (!response.ok) {
+                let message = "PDF download failed (HTTP " + response.status + ").";
+                try {
+                    const data = await response.json();
+                    if (data.error) message = data.error;
+                } catch (_) {}
+                throw new Error(message);
+            }
+
+            const blob = await response.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+
+            link.href = objectUrl;
+            link.download = "netsecure_scan_" + selectedScanId + "_report.pdf";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+
+            showMessage("PDF report downloaded for Scan #" + selectedScanId + ".");
+        } catch (error) {
+            showMessage(error.message, true);
+        } finally {
+            button.disabled = false;
+            button.textContent = "↓ Download PDF";
+        }
+    }
+
+    async function startScan() {
+        const button = document.getElementById("scanBtn");
+        button.disabled = true;
+        button.textContent = "Scanning...";
+        showMessage("Scanning localhost. Please wait...");
+
+        try {
+            const response = await fetch(API + "/api/scan", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ target: "127.0.0.1" })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Scan request failed");
+            }
+
+            selectedScanId = Number(data.scan_id);
+            await loadDashboard();
+            await loadVulnerabilities();
+            await viewScan(data.scan_id);
+            showMessage("Scan #" + data.scan_id + " completed successfully.");
+        } catch (error) {
+            showMessage("Scan failed: " + error.message, true);
+        } finally {
+            button.disabled = false;
+            button.textContent = "+ Scan Localhost";
+        }
+    }
+
+    initializeCharts();
+    loadDashboard();
+    loadVulnerabilities();
+</script>
+</body>
+</html>
